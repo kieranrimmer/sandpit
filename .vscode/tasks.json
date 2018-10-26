@@ -29,7 +29,7 @@
       "type": "shell",
       "command": "clang++",
       "args": [
-          "-std=c++14", "-g", "cpp_sandbox/src/skiplist.cpp", "-o", "cpp_sandbox/build/skiplist"
+          "-std=c++14", "-o0", "-g", "cpp_sandbox/src/skiplist.cpp", "-o", "cpp_sandbox/build/skiplist"
       ]
     }
   ]
