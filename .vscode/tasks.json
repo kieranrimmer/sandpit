@@ -1,0 +1,36 @@
+{
+  // See https://go.microsoft.com/fwlink/?LinkId=733558
+  // for the documentation about the tasks.json format
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "echo",
+      "type": "shell",
+      "command": "echo Hello"
+    },
+    {
+      "label": "build braced_initialization",
+      "type": "shell",
+      "command": "clang",
+      "args": [
+          "-g", "c11_sandbox/src/braced_initialization.c", "-o", "c11_sandbox/build/braced_initialization"
+      ]
+    },
+    {
+      "label": "build++ braced_initialization",
+      "type": "shell",
+      "command": "clang++",
+      "args": [
+          "-g", "c11_sandbox/src/braced_initialization.c", "-o", "c11_sandbox/build/braced_initialization"
+      ]
+    },
+    {
+      "label": "build++ skiplist",
+      "type": "shell",
+      "command": "clang++",
+      "args": [
+          "-std=c++14", "-g", "cpp_sandbox/src/skiplist.cpp", "-o", "cpp_sandbox/build/skiplist"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "c braced_initialization (lldb) Launch",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/c11_sandbox/build/braced_initialization",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": true,
+      "MIMode": "lldb",
+      "preLaunchTask": "build braced_initialization"
+    },
+    {
+      "name": "c++ braced_initialization (lldb) Launch",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/c11_sandbox/build/braced_initialization",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": true,
+      "MIMode": "lldb",
+      "preLaunchTask": "build++ braced_initialization"
+    },
+    {
+      "name": "c++ skiplist (lldb) Launch",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/cpp_sandbox/build/skiplist",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": true,
+      "MIMode": "lldb",
+      "preLaunchTask": "build++ skiplist"
+    }
+  ]
+}
