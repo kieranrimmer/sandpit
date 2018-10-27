@@ -1,6 +1,7 @@
 
 #include <iostream>
 #include <vector>
+#include <cassert>
 
 using std::cout;
 using std::vector;
@@ -62,39 +63,40 @@ struct RuntimeCheckNode {
   // RuntimeCheckNode(void* _data, char _flags) : data{_data}, flags{_flags} {}
 };
 
+
+
 void runtimeTest() {
   int datum = 2252;
   size_t vecSize = 10;
   size_t i = 0;
   size_t j = 0;
   {
-    vector< RuntimeCheckNode<int*> *> nodeVec;
-    nodeVec.push_back(new RuntimeCheckNode<int*>{ .data = &datum, .flags =  IS_LEAF_FLAG  });
+    vector< std::unique_ptr< RuntimeCheckNode<int*> > > nodeVec;
+    nodeVec.push_back(std::make_unique< RuntimeCheckNode<int*> >(RuntimeCheckNode<int*>{ .data = &datum, .flags =  IS_LEAF_FLAG  }));
     cout << "Added intital node at " << nodeVec.size() << ": " << &nodeVec[nodeVec.size() - 1] << "\n"; 
     
     
     while(i < vecSize) {
-      nodeVec.push_back(new RuntimeCheckNode<int*>{.data = nodeVec[nodeVec.size() - 1], .flags = '\0' });
+      nodeVec.push_back(std::make_unique< RuntimeCheckNode<int*> >(RuntimeCheckNode<int*>{.data = nodeVec[nodeVec.size() - 1].get(), .flags = '\0' }));
       cout << "Added node at " << nodeVec.size() << ": " << &nodeVec[nodeVec.size() - 1] << "\n";
       ++i;
     }
-    for(auto elem: nodeVec) {
+    for(auto &elem: nodeVec) {
           std::cout << "entry " << j << " = " << *((int *) elem->data) << "\n";
           ++j;
     }
     //
     cout << "Time to search Runtime Checkable nodes\n";
-    auto curNode = nodeVec[nodeVec.size() - 1];
+    auto curNode = nodeVec[nodeVec.size() - 1].get();
     while (!curNode->isLeafNode()) {
       cout << "Searching...\n";
       curNode = curNode->getNext();
     }
     cout << "Found datum = " << *curNode->getData() << "\n";
-    for(auto elem: nodeVec) {
-          delete(elem);
-    }
+    assert(*curNode->getData() == datum);
+    cout << "Test passed!!!\n";
   }
-  cout << "Test completed!!!\n\n";
+  cout << "Test completed!!!\n";
 
   
 }
