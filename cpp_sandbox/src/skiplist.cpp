@@ -7,45 +7,51 @@
 using std::cout;
 using std::vector;
 
+#define _ASSUMED_CACHE_LINE_SIZE_ 64
+
 // For a tree-based index in C++, assuming it is best to fit nodes into cache lines, is it better to: (a) use polymorphism / burn space on a vtable pointer, (b) use some sort of flag to check the node type at runtime, (c) something else?
 
 #define _IS_LEAF_FLAG_ 0x01
 
+const size_t ASSUMED_CACHE_LINE_SIZE = (size_t) _ASSUMED_CACHE_LINE_SIZE_;
+
 const char IS_LEAF_FLAG = (char) _IS_LEAF_FLAG_;
 
-template<typename DataType>
+template<typename KeyType, typename DataType>
 struct BaseNode {
-  public:
+  static_assert( sizeof(void *) == sizeof(DataType), "DataType type must be pointer-sized" );
   virtual DataType getData() = 0;
   virtual BaseNode *getNext() = 0;
   virtual ~BaseNode() = default;
 };
 
-template<typename DataType>
-struct InternalNode: public BaseNode<DataType> {
-  BaseNode<DataType> *next;
+template<typename KeyType, typename DataType>
+struct InternalNode: public BaseNode<KeyType, DataType> {
+  static_assert( sizeof(void *) == sizeof(DataType), "DataType type must be pointer-sized" );
+  BaseNode<KeyType, DataType> *next;
   DataType getData() override {
     return nullptr;
   }
-  BaseNode<DataType> *getNext() override {
+  BaseNode<KeyType, DataType> *getNext() override {
     return next;
   }
-  explicit InternalNode(BaseNode<DataType> *_next) : next{_next} {}
+  explicit InternalNode(BaseNode<KeyType, DataType> *_next) : next{_next} {}
 };
 
-template<typename DataType>
-struct LeafNode: public BaseNode<DataType> {
+template<typename KeyType, typename DataType>
+struct LeafNode: public BaseNode<KeyType, DataType> {
+  static_assert( sizeof(void *) == sizeof(DataType), "DataType type must be pointer-sized" );
   DataType data;
   DataType getData() override {
     return data;
   }
-  BaseNode<DataType> *getNext() override {
+  BaseNode<KeyType, DataType> *getNext() override {
     return nullptr;
   }
   explicit LeafNode(DataType _data) : data{_data} {}
 };
 
-template<typename DataType>
+template<typename KeyType, typename DataType>
 struct RuntimeCheckNode {
   void *data;
   char flags;
@@ -69,13 +75,13 @@ struct RuntimeCheckNode {
   // RuntimeCheckNode(void* _data, char _flags) : data{_data}, flags{_flags} {}
 };
 
-template<typename T>
-vector< std::unique_ptr< BaseNode<T> > > generatePolymorphicVec(T datum, size_t vecSize = 10) {
-  vector< std::unique_ptr< BaseNode<T> > > nodeVec;
-  nodeVec.push_back(std::make_unique< LeafNode<T> >( LeafNode<T>(datum) ));
+template<typename K, typename T>
+vector< std::unique_ptr< BaseNode<K, T> > > generatePolymorphicVec(T datum, size_t vecSize = 10) {
+  vector< std::unique_ptr< BaseNode<K, T> > > nodeVec;
+  nodeVec.push_back(std::make_unique< LeafNode<K, T> >( LeafNode<K, T>(datum) ));
   size_t i = 0;
   while(i < vecSize) {
-    nodeVec.push_back(std::make_unique< InternalNode<T> >(InternalNode<T>( nodeVec[nodeVec.size() - 1].get() ) ));
+    nodeVec.push_back(std::make_unique< InternalNode<K, T> >(InternalNode<K, T>( nodeVec[nodeVec.size() - 1].get() ) ));
     // cout << "Added node #" << i << "\n";
     ++i;
   }
@@ -87,7 +93,7 @@ void polymorphicTest(size_t vecSize) {
   size_t i = 0;
   size_t j = 0;
   {
-    vector< std::unique_ptr< BaseNode<int*> > > nodeVec = generatePolymorphicVec(&datum, vecSize);
+    vector< std::unique_ptr< BaseNode<int, int*> > > nodeVec = generatePolymorphicVec<int, int*>(&datum, vecSize);
     //
     cout << "Time to search Polymorphic nodes\n";
     // CLOCK SETUP BLOCK
@@ -113,13 +119,13 @@ void polymorphicTest(size_t vecSize) {
   cout << "Test completed!!!\n";
 }
 
-template<typename T>
-vector< std::unique_ptr< RuntimeCheckNode<T> > > generateRuntimeVec(T datum, size_t vecSize = 10) {
-  vector< std::unique_ptr< RuntimeCheckNode<T> > > nodeVec;
-  nodeVec.push_back(std::make_unique< RuntimeCheckNode<T> >(RuntimeCheckNode<T>{ .data = datum, .flags =  IS_LEAF_FLAG  }));
+template<typename K, typename T>
+vector< std::unique_ptr< RuntimeCheckNode<K, T> > > generateRuntimeVec(T datum, size_t vecSize = 10) {
+  vector< std::unique_ptr< RuntimeCheckNode<K, T> > > nodeVec;
+  nodeVec.push_back(std::make_unique< RuntimeCheckNode<K, T> >(RuntimeCheckNode<K, T>{ .data = datum, .flags =  IS_LEAF_FLAG  }));
   size_t i = 0;
   while(i < vecSize) {
-    nodeVec.push_back(std::make_unique< RuntimeCheckNode<int*> >(RuntimeCheckNode<int*>{.data = nodeVec[nodeVec.size() - 1].get(), .flags = '\0' }));
+    nodeVec.push_back(std::make_unique< RuntimeCheckNode<K, T> >(RuntimeCheckNode<K, T>{.data = nodeVec[nodeVec.size() - 1].get(), .flags = '\0' }));
     // cout << "Added node #" << i << "\n";
     ++i;
   }
@@ -132,7 +138,7 @@ void runtimeTest(size_t vecSize) {
   size_t i = 0;
   size_t j = 0;
   {
-    vector< std::unique_ptr< RuntimeCheckNode<int*> > > nodeVec = generateRuntimeVec(&datum, vecSize);
+    vector< std::unique_ptr< RuntimeCheckNode<int, int*> > > nodeVec = generateRuntimeVec<int, int*>(&datum, vecSize);
     //
     cout << "Time to search Runtime Checkable nodes\n";
     // CLOCK SETUP BLOCK
