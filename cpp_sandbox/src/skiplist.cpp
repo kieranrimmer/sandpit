@@ -7,15 +7,17 @@
 using std::cout;
 using std::vector;
 
+using flags_t=char;
+
 #define _ASSUMED_CACHE_LINE_SIZE_ 64
+#define _IS_LEAF_FLAG_ 0x01
 
 // For a tree-based index in C++, assuming it is best to fit nodes into cache lines, is it better to: (a) use polymorphism / burn space on a vtable pointer, (b) use some sort of flag to check the node type at runtime, (c) something else?
 
-#define _IS_LEAF_FLAG_ 0x01
 
-const size_t ASSUMED_CACHE_LINE_SIZE = (size_t) _ASSUMED_CACHE_LINE_SIZE_;
 
-const char IS_LEAF_FLAG = (char) _IS_LEAF_FLAG_;
+constexpr size_t ASSUMED_CACHE_LINE_SIZE = (size_t) _ASSUMED_CACHE_LINE_SIZE_;
+constexpr flags_t IS_LEAF_FLAG = (flags_t) _IS_LEAF_FLAG_;
 
 template<typename KeyType, typename DataType>
 struct BaseNode {
@@ -28,6 +30,7 @@ struct BaseNode {
 template<typename KeyType, typename DataType>
 struct InternalNode: public BaseNode<KeyType, DataType> {
   static_assert( sizeof(void *) == sizeof(DataType), "DataType type must be pointer-sized" );
+  constexpr static size_t max_keyptr_pairs = (sizeof(KeyType) + sizeof(BaseNode<KeyType, DataType> *)) / (ASSUMED_CACHE_LINE_SIZE - sizeof(BaseNode<KeyType, DataType>));
   BaseNode<KeyType, DataType> *next;
   DataType getData() override {
     return nullptr;
@@ -41,6 +44,7 @@ struct InternalNode: public BaseNode<KeyType, DataType> {
 template<typename KeyType, typename DataType>
 struct LeafNode: public BaseNode<KeyType, DataType> {
   static_assert( sizeof(void *) == sizeof(DataType), "DataType type must be pointer-sized" );
+  constexpr static size_t max_keyval_pairs = (sizeof(KeyType) + sizeof(DataType)) / (ASSUMED_CACHE_LINE_SIZE - sizeof(BaseNode<KeyType, DataType>));
   DataType data;
   DataType getData() override {
     return data;
@@ -53,10 +57,11 @@ struct LeafNode: public BaseNode<KeyType, DataType> {
 
 template<typename KeyType, typename DataType>
 struct RuntimeCheckNode {
+  constexpr static size_t max_keyval_pairs = (sizeof(KeyType) + sizeof(DataType)) / (ASSUMED_CACHE_LINE_SIZE - sizeof(flags_t));
   void *data;
-  char flags;
+  flags_t flags;
   bool isLeafNode() const {
-    return flags & (char) IS_LEAF_FLAG;
+    return flags & (flags_t) IS_LEAF_FLAG;
   }
   DataType getData() {
     return isLeafNode() ? reinterpret_cast<DataType>(data) : nullptr;
