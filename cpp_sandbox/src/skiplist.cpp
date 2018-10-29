@@ -40,7 +40,6 @@ void reportPackingScenarios() {
   cout << "\n####\n";
 }
 
-
 //
 
 constexpr size_t ASSUMED_CACHE_LINE_SIZE = (size_t) _ASSUMED_CACHE_LINE_SIZE_;
