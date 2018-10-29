@@ -40,6 +40,7 @@ void reportPackingScenarios() {
   cout << "\n####\n";
 }
 
+
 //
 
 constexpr size_t ASSUMED_CACHE_LINE_SIZE = (size_t) _ASSUMED_CACHE_LINE_SIZE_;
@@ -49,12 +50,16 @@ template<typename KeyType, typename DataType>
 struct BaseNode {
   static_assert( sizeof(void *) == sizeof(DataType), "DataType type must be pointer-sized" );
   virtual DataType getData() = 0;
-  virtual BaseNode *getNext() = 0;
+  virtual void autoIncrementKeys() {}
+  virtual BaseNode *getNext(KeyType key) = 0;
   virtual ~BaseNode() = default;
 
-  const static std::less<KeyType> KeyComparatorLess();
+  // constexpr static std::less<KeyType> KeyComparatorLess = std::less<KeyType>();
+  // constexpr static std::equal_to<KeyType> KeyComparatorEq = std::equal_to<KeyType>();
 
 };
+
+const std::less<> KeyComparatorLess = std::less<>();
 
 template<typename KeyType, typename DataType>
 struct InternalNode: public BaseNode<KeyType, DataType> {
@@ -72,8 +77,20 @@ struct InternalNode: public BaseNode<KeyType, DataType> {
   DataType getData() override {
     return nullptr;
   }
-  BaseNode<KeyType, DataType> *getNext() override {
-    return next[0];
+  void autoIncrementKeys() override {
+    for(int i=0;i<keyptr_pairs;++i) {
+      keys[i]=keys[i-1]+1;
+      next[i]=next[0];
+    }
+  }
+  size_t scanKeyArr(KeyType key) const {
+    size_t i = 0;
+    while(KeyComparatorLess(keys[i], key) && i < keyptr_pairs)
+      ++i;
+    return i;
+  }
+  BaseNode<KeyType, DataType> *getNext(KeyType key) override {
+    return next[scanKeyArr(key)];
   }
   explicit InternalNode(BaseNode<KeyType, DataType> *_next) : next{_next} {}
   explicit InternalNode(BaseNode<KeyType, DataType> *_next, KeyType _key) : next{_next}, keys{_key} {}
@@ -96,7 +113,7 @@ struct LeafNode: public BaseNode<KeyType, DataType> {
   DataType getData() override {
     return data[0];
   }
-  BaseNode<KeyType, DataType> *getNext() override {
+  BaseNode<KeyType, DataType> *getNext(KeyType key) override {
     return nullptr;
   }
   explicit LeafNode(DataType _data) : data{_data} {}
@@ -113,7 +130,8 @@ struct RuntimeCheckNode {
   constexpr static size_t keyval_pairs = max_keyval_pairs > 0 ? max_keyval_pairs : 1;
   static_assert(keyval_pairs > 0, "Array is large enough");
 
-  const static std::less<KeyType> KeyComparatorLess();
+  // static std::less<KeyType> KeyComparatorLess = std::less<KeyType>();
+  // static std::equal_to<KeyType> KeyComparatorEq = std::equal_to<KeyType>();
 
   // Larger type first for optimal layout
   void* data[keyval_pairs];
@@ -126,8 +144,15 @@ struct RuntimeCheckNode {
   DataType getData() {
     return isLeafNode() ? reinterpret_cast<DataType>(data[0]) : nullptr;
   }
-  RuntimeCheckNode *getNext() {
-    return isLeafNode() ? nullptr : reinterpret_cast<RuntimeCheckNode*>(data[0]);
+  size_t scanKeyArr(KeyType key) const {
+    size_t i = 0;
+    while(KeyComparatorLess(keys[i], key) && i < keyval_pairs)
+      ++i;
+    return i;
+  }
+  RuntimeCheckNode *getNext(KeyType key) const {
+    return isLeafNode() ? nullptr 
+            : reinterpret_cast<RuntimeCheckNode*>(data[scanKeyArr(key)]);
   }
   // RuntimeCheckNode() = default;
   RuntimeCheckNode(const RuntimeCheckNode &other) = default;
@@ -146,7 +171,9 @@ vector< std::unique_ptr< BaseNode<K, T> > > generatePolymorphicVec(K key, T datu
   nodeVec.push_back(std::make_unique< LeafNode<K, T> >( LeafNode<K, T>(datum, key) ));
   size_t i = 0;
   while(i < vecSize) {
-    nodeVec.push_back(std::make_unique< InternalNode<K, T> >(InternalNode<K, T>( nodeVec[nodeVec.size() - 1].get(), key ) ));
+    auto toInsert = std::make_unique< InternalNode<K, T> >(InternalNode<K, T>( nodeVec[nodeVec.size() - 1].get(), key ) );
+    toInsert->autoIncrementKeys();
+    nodeVec.push_back(std::move(toInsert));
     // cout << "Added node #" << i << "\n";
     ++i;
   }
@@ -157,8 +184,15 @@ void polymorphicTest(size_t vecSize) {
   int datum = 2252;
   size_t i = 0;
   size_t j = 0;
+  int minKey = 1;
+  int maxKey = minKey + InternalNode<int, int*>::keyptr_pairs - 1;
   {
-    vector< std::unique_ptr< BaseNode<int, int*> > > nodeVec = generatePolymorphicVec<int, int*>(1, &datum, vecSize);
+    vector< std::unique_ptr< BaseNode<int, int*> > > nodeVec = generatePolymorphicVec<int, int*>(minKey, &datum, vecSize);
+    for (auto& elem: nodeVec) {
+      for(int i=0; i < InternalNode<int, int*>::keyptr_pairs; ++i) {
+        // elem->keys[i] = minKey + i;
+      }
+    }
     //
     cout << "Time to search Polymorphic nodes\n";
     cout << "\n#### InternalNode metadata:\n";
@@ -176,7 +210,7 @@ void polymorphicTest(size_t vecSize) {
     auto curNode = nodeVec[nodeVec.size() - 1].get();
     while (curNode->getData() ==  nullptr) {
       //cout << "Searching...\n";
-      curNode = curNode->getNext();
+      curNode = curNode->getNext(maxKey);
     }
     // cout << "Found datum = " << *curNode->getData() << "\n";
     assert(*curNode->getData() == datum);
@@ -197,7 +231,7 @@ vector< std::unique_ptr< RuntimeCheckNode<K, T> > > generateRuntimeVec(K key, T 
   nodeVec.push_back(std::make_unique< RuntimeCheckNode<K, T> >(RuntimeCheckNode<K, T>{ .data = {datum}, .keys = {key}, .flags =  IS_LEAF_FLAG  }));
   size_t i = 0;
   while(i < vecSize) {
-    nodeVec.push_back(std::make_unique< RuntimeCheckNode<K, T> >(RuntimeCheckNode<K, T>{.data = {nodeVec[nodeVec.size() - 1].get()}, .keys = {key}, .flags = '\0' }));
+    nodeVec.push_back(std::make_unique< RuntimeCheckNode<K, T> >(RuntimeCheckNode<K, T>{ .data = {nodeVec[nodeVec.size() - 1].get()}, .keys = {key}, .flags = '\0' }));
     // cout << "Added node #" << i << "\n";
     ++i;
   }
@@ -209,8 +243,16 @@ void runtimeTest(size_t vecSize) {
   int datum = 2252;
   size_t i = 0;
   size_t j = 0;
+  int minKey = 1;
+  int maxKey = minKey + RuntimeCheckNode<int, int*>::keyval_pairs -1;
   {
     vector< std::unique_ptr< RuntimeCheckNode<int, int*> > > nodeVec = generateRuntimeVec<int, int*>(1, &datum, vecSize);
+    for (auto& elem: nodeVec) {
+      for(int i=0; i < RuntimeCheckNode<int, int*>::keyval_pairs; ++i) {
+        elem->keys[i] = minKey + i;
+        elem->data[i] = elem->data[0];
+      }
+    }
     cout << "\n### RuntimeCheckNode metadata:\n";
     cout << "RuntimeCheckNode<int, int*>::max_keyval_pairs = " << RuntimeCheckNode<int, int*>::max_keyval_pairs << "\n";
     cout << "sizeof(RuntimeCheckNode<int, int*>)" << sizeof(RuntimeCheckNode<int, int*>) << "\n";
@@ -225,7 +267,7 @@ void runtimeTest(size_t vecSize) {
     auto curNode = nodeVec[nodeVec.size() - 1].get();
     while (!curNode->isLeafNode()) {
       // cout << "Searching...\n";
-      curNode = curNode->getNext();
+      curNode = curNode->getNext(maxKey);
     }
     // cout << "Found datum = " << *curNode->getData() << "\n";
     assert(*curNode->getData() == datum);
