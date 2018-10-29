@@ -11,10 +11,35 @@ using flags_t=char;
 
 #define _ASSUMED_CACHE_LINE_SIZE_ 64
 #define _IS_LEAF_FLAG_ 0x01
-
+#define _TEST_ARR_SIZE_ 100
 // For a tree-based index in C++, assuming it is best to fit nodes into cache lines, is it better to: (a) use polymorphism / burn space on a vtable pointer, (b) use some sort of flag to check the node type at runtime, (c) something else?
 
+// CRUDE PACKING TESTS
 
+constexpr size_t TEST_ARR_SIZE = (size_t) _TEST_ARR_SIZE_;
+
+struct serial_obj {
+  int64_t int_64_val;
+  int32_t int_32_val;
+};
+
+struct parallel_arrays_container {
+  int64_t int_64_val_arr[TEST_ARR_SIZE];
+  int32_t int_32_val_arr[TEST_ARR_SIZE];
+};
+
+struct serial_object_array_container {
+  serial_obj serial_obj_arr[TEST_ARR_SIZE];
+};
+
+void reportPackingScenarios() {
+  cout << "\n#### Packing Scenarios:\n";
+  cout << "sizeof(parallel_arrays_container) = " << sizeof(parallel_arrays_container) << "\n";
+  cout << "sizeof(serial_object_array_container) = " << sizeof(serial_object_array_container) << "\n";
+  cout << "\n####\n";
+}
+
+//
 
 constexpr size_t ASSUMED_CACHE_LINE_SIZE = (size_t) _ASSUMED_CACHE_LINE_SIZE_;
 constexpr flags_t IS_LEAF_FLAG = (flags_t) _IS_LEAF_FLAG_;
@@ -200,5 +225,6 @@ void runtimeTest(size_t vecSize) {
 int main() {
   runtimeTest(1e3);
   polymorphicTest(1e3);
+  reportPackingScenarios();
 }
 
