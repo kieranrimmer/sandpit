@@ -60,8 +60,11 @@ struct InternalNode: public BaseNode<KeyType, DataType> {
     (sizeof(KeyType) + sizeof(BaseNode<KeyType, DataType> *));
   constexpr static size_t keyptr_pairs = max_keyptr_pairs > 0 ? max_keyptr_pairs : 1;
   static_assert(keyptr_pairs > 0, "Array is large enough");
-  KeyType keys[keyptr_pairs];
+
+  // Larger type first for optimal layout
   BaseNode<KeyType, DataType>* next[keyptr_pairs];
+  KeyType keys[keyptr_pairs];
+
   DataType getData() override {
     return nullptr;
   }
@@ -73,14 +76,18 @@ struct InternalNode: public BaseNode<KeyType, DataType> {
 
 template<typename KeyType, typename DataType>
 struct LeafNode: public BaseNode<KeyType, DataType> {
+  
   static_assert( sizeof(void *) == sizeof(DataType), "DataType type must be pointer-sized" );
   constexpr static size_t max_keyval_pairs = 
     (ASSUMED_CACHE_LINE_SIZE - sizeof(BaseNode<KeyType, DataType>)) /
     (sizeof(KeyType) + sizeof(DataType));
   constexpr static size_t keyval_pairs = max_keyval_pairs > 0 ? max_keyval_pairs : 1;
   static_assert(keyval_pairs > 0, "Array is large enough");
-  KeyType keys[keyval_pairs];
+  
+  // Larger type first for optimal layout
   DataType data[keyval_pairs];
+  KeyType keys[keyval_pairs];
+
   DataType getData() override {
     return data[0];
   }
@@ -99,8 +106,11 @@ struct RuntimeCheckNode {
     );
   constexpr static size_t keyval_pairs = max_keyval_pairs > 0 ? max_keyval_pairs : 1;
   static_assert(keyval_pairs > 0, "Array is large enough");
+
+  // Larger type first for optimal layout
   void* data[keyval_pairs];
   KeyType keys[keyval_pairs];
+
   flags_t flags;
   bool isLeafNode() const {
     return flags & (flags_t) IS_LEAF_FLAG;
