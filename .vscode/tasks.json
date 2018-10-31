@@ -29,15 +29,23 @@
       "type": "shell",
       "command": "clang++",
       "args": [
-          "-std=c++14", "-o0", "-g", "cpp_sandbox/src/skiplist.cpp", "-o", "cpp_sandbox/build/skiplist"
+          "-std=c++14", "-g", "cpp_sandbox/src/skiplist.cpp", "-o", "cpp_sandbox/build/skiplist"
       ]
     },
     {
-      "label": "build++ skiplist o3",
+      "label": "build++ skiplist O3",
       "type": "shell",
       "command": "clang++",
       "args": [
-          "-std=c++14", "-o3", "cpp_sandbox/src/skiplist.cpp", "-o", "cpp_sandbox/build/skiplist_o3"
+          "-std=c++14", "-O3", "cpp_sandbox/src/skiplist.cpp", "-o", "cpp_sandbox/build/skiplist_O3"
+      ]
+    },
+    {
+      "label": "build++ player",
+      "type": "shell",
+      "command": "clang++",
+      "args": [
+          "-std=c++14", "-g", "cpp_sandbox/src/player.cpp", "-o", "cpp_sandbox/build/player"
       ]
     }
   ]

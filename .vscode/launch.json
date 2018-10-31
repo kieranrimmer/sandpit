@@ -48,14 +48,27 @@
       "name": "c++ skiplist (lldb) -O3 Launch",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/cpp_sandbox/build/skiplist_o3",
+      "program": "${workspaceFolder}/cpp_sandbox/build/skiplist_O3",
       "args": [],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],
       "externalConsole": true,
       "MIMode": "lldb",
-      "preLaunchTask": "build++ skiplist o3"
+      "preLaunchTask": "build++ skiplist O3"
+    },
+    {
+      "name": "c++ player (lldb)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/cpp_sandbox/build/player",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": true,
+      "MIMode": "lldb",
+      "preLaunchTask": "build++ player"
     }
   ]
 }
