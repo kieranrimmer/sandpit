@@ -47,6 +47,14 @@
       "args": [
           "-std=c++14", "-g", "cpp_sandbox/src/player.cpp", "-o", "cpp_sandbox/build/player"
       ]
+    },
+    {
+      "label": "build++ locking",
+      "type": "shell",
+      "command": "clang++",
+      "args": [
+          "-std=c++14", "-g", "cpp_os_primitives/src/locking.cpp", "-o", "cpp_os_primitives/build/locking"
+      ]
     }
   ]
 }

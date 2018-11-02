@@ -69,6 +69,19 @@
       "externalConsole": true,
       "MIMode": "lldb",
       "preLaunchTask": "build++ player"
+    },
+    {
+      "name": "c++ locking (lldb)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/cpp_os_primitives/build/locking",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": true,
+      "MIMode": "lldb",
+      "preLaunchTask": "build++ locking"
     }
   ]
 }
