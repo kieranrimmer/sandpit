@@ -53,7 +53,7 @@
       "type": "shell",
       "command": "clang++",
       "args": [
-          "-std=c++14", "-g", "cpp_os_primitives/src/locking.cpp", "-o", "cpp_os_primitives/build/locking"
+          "-I${workspaceFolder}", "-std=c++14", "-g", "cpp_os_primitives/src/locking.cpp", "-o", "cpp_os_primitives/build/locking"
       ]
     }
   ]

@@ -4,8 +4,14 @@
             "name": "Mac",
             "includePath": [
                 "/usr/include/**",
-                "/usr/local/include/**"
+                "/usr/local/include/**",
+                "${workspaceFolder}/**"
             ],
+            "browse": {
+              "path": [
+                "${workspaceFolder}"
+              ]
+            },
             "defines": [],
             "macFrameworkPath": [
                 "/System/Library/Frameworks",

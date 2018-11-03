@@ -5,7 +5,10 @@
 #include <chrono>
 #include <sstream>
 #include <cassert>
-#include <ctime>
+
+#include <queue>
+
+#include "cpp_utilities/include/testing_utils.h"
 
 using std::cout;
 using std::stringstream;
@@ -14,32 +17,6 @@ using std::string;
 // Globals for CAS lock primitive testing
 std::atomic_bool simpleLock(false);
 bool cas_bool(false);
-
-
-// template<typename F, typename ... Args>
-// void TestWrapper(F& fn, ) {
-  
-
-// }
-
-template<typename F1, typename ... Args>
-auto testWrapperBasic(F1 f1, Args && ... args) 
--> decltype(f1(args...)) {
-  // CLOCK SETUP BLOCK
-  std::clock_t start;
-  double duration;
-  start = std::clock();
-  // END CLOCK SETUP BLOCK
-  f1(args...);
-  // CLOCK READ BLOCK
-  duration = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
-  // END CLOCK READ BLOCK
-  // CLOCK REPORT BLOCK
-  cout << __func__ << " duration: " << duration << '\n';
-  // END CLOCK REPORT BLOCK
-  cout << "Test passed!!!\n"; 
-}
-
 
 
 void testAndSetTest(int arg) {
@@ -81,6 +58,10 @@ void builtinTestAndSetTest(int arg) {
   cout << sThread.str();
   __atomic_store_n(&cas_bool, false, __ATOMIC_SEQ_CST);
 }
+
+// class Semaphore {
+//   std::queue<>
+// };
 
 
 void lockRaceTestAndSet() {
