@@ -4,6 +4,8 @@
 #include <thread>
 #include <chrono>
 #include <sstream>
+#include <cassert>
+#include <ctime>
 
 using std::cout;
 using std::stringstream;
@@ -12,6 +14,33 @@ using std::string;
 // Globals for CAS lock primitive testing
 std::atomic_bool simpleLock(false);
 bool cas_bool(false);
+
+
+// template<typename F, typename ... Args>
+// void TestWrapper(F& fn, ) {
+  
+
+// }
+
+template<typename F1, typename ... Args>
+auto testWrapperBasic(F1 f1, Args && ... args) 
+-> decltype(f1(args...)) {
+  // CLOCK SETUP BLOCK
+  std::clock_t start;
+  double duration;
+  start = std::clock();
+  // END CLOCK SETUP BLOCK
+  f1(args...);
+  // CLOCK READ BLOCK
+  duration = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
+  // END CLOCK READ BLOCK
+  // CLOCK REPORT BLOCK
+  cout << __func__ << " duration: " << duration << '\n';
+  // END CLOCK REPORT BLOCK
+  cout << "Test passed!!!\n"; 
+}
+
+
 
 void testAndSetTest(int arg) {
   stringstream sThread;
@@ -50,11 +79,14 @@ void builtinTestAndSetTest(int arg) {
   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
   sThread << "Thread with arg = " << arg << " ready to release Test And Set lock!!!\nShall Exit Now!!!\n\n";
   cout << sThread.str();
-  cas_bool = false;
+  __atomic_store_n(&cas_bool, false, __ATOMIC_SEQ_CST);
 }
 
 
 void lockRaceTestAndSet() {
+
+  
+
   std::thread threadOne(testAndSetTest, 1);
   std::thread threadTwo(testAndSetTest, 2);
   std::thread threadThree(testAndSetTest, 55);
@@ -76,8 +108,12 @@ void lockRaceBuiltinTestAndSet() {
 
 int main() {
 
-  lockRaceTestAndSet();
+  // lockRaceTestAndSet();
+  // lockRaceBuiltinTestAndSet();
 
-  lockRaceBuiltinTestAndSet();
+  testWrapperBasic(lockRaceTestAndSet);
+  testWrapperBasic(lockRaceBuiltinTestAndSet);
+
+  
 
 }
