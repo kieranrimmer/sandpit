@@ -1,6 +1,6 @@
 WITH shared_addr AS 
 (
-SELECT foo.account_a, foo.account_b, row_number() OVER (ORDER BY foo.account_a) AS shared
+SELECT foo.account_a, foo.account_b, row_number() OVER (ORDER BY foo.account_a) AS shared_id
 FROM (
 SELECT 
   a.account_id as account_a
@@ -20,7 +20,9 @@ email_address
 FROM
 (
 SELECT
-service_a.* FROM service_a
+'A-' || service_a.account_id::text AS account_id,
+service_a.email_address
+FROM service_a
 LEFT OUTER JOIN 
 shared_addr
 ON
@@ -30,7 +32,8 @@ WHERE shared_addr.account_b IS NULL
 UNION ALL
 
 SELECT
-service_b.* FROM service_b
+'B-' ||service_b.account_id::text,
+service_b.email_address FROM service_b
 LEFT OUTER JOIN 
 shared_addr
 ON
@@ -40,7 +43,7 @@ WHERE shared_addr.account_a IS NULL
 UNION ALL
 (
 SELECT
-shared_addr.shared,
+'C-' || shared_addr.shared_id::text,
 service_b.email_address
 FROM service_b
 JOIN 
@@ -51,7 +54,7 @@ shared_addr.account_b = service_b.account_id
 UNION
 
 SELECT
-shared_addr.shared,
+'C-' || shared_addr.shared_id::text,
 service_a.email_address
 FROM service_a
 JOIN 
